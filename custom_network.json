@@ -79,43 +79,43 @@
             "Alice": {
                 "app_socket": [
                     "localhost",
-                    8002
+                    8001
                 ],
                 "cqc_socket": [
                     "localhost",
-                    8004
+                    8005
                 ],
                 "vnode_socket": [
                     "localhost",
-                    8007
+                    8023
                 ]
             },
             "Bob": {
                 "app_socket": [
                     "localhost",
-                    8008
+                    8027
                 ],
                 "cqc_socket": [
                     "localhost",
-                    8021
+                    8028
                 ],
                 "vnode_socket": [
                     "localhost",
-                    8022
+                    8029
                 ]
             },
             "Charlie": {
                 "app_socket": [
                     "localhost",
-                    8024
+                    8030
                 ],
                 "cqc_socket": [
                     "localhost",
-                    8025
+                    8031
                 ],
                 "vnode_socket": [
                     "localhost",
-                    8026
+                    8032
                 ]
             }
         },

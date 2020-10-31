@@ -19,8 +19,6 @@ def main():
     # Start the network
     network.start(wait_until_running=True)
 
-    time.sleep(180)
-
     input("Press Enter to stop the network... \n")
 
     """
