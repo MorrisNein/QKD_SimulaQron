@@ -1,0 +1,135 @@
+{
+    "default_old": {
+        "nodes": {
+            "Alice": {
+                "app_socket": [
+                    "localhost",
+                    8000
+                ],
+                "cqc_socket": [
+                    "localhost",
+                    8003
+                ],
+                "vnode_socket": [
+                    "localhost",
+                    8006
+                ]
+            },
+            "Bob": {
+                "app_socket": [
+                    "localhost",
+                    8009
+                ],
+                "cqc_socket": [
+                    "localhost",
+                    8010
+                ],
+                "vnode_socket": [
+                    "localhost",
+                    8011
+                ]
+            },
+            "Charlie": {
+                "app_socket": [
+                    "localhost",
+                    8012
+                ],
+                "cqc_socket": [
+                    "localhost",
+                    8013
+                ],
+                "vnode_socket": [
+                    "localhost",
+                    8014
+                ]
+            },
+            "David": {
+                "app_socket": [
+                    "localhost",
+                    8015
+                ],
+                "cqc_socket": [
+                    "localhost",
+                    8016
+                ],
+                "vnode_socket": [
+                    "localhost",
+                    8017
+                ]
+            },
+            "Eve": {
+                "app_socket": [
+                    "localhost",
+                    8018
+                ],
+                "cqc_socket": [
+                    "localhost",
+                    8019
+                ],
+                "vnode_socket": [
+                    "localhost",
+                    8020
+                ]
+            }
+        },
+        "topology": null
+    },
+    "default": {
+        "nodes": {
+            "Alice": {
+                "app_socket": [
+                    "localhost",
+                    8002
+                ],
+                "cqc_socket": [
+                    "localhost",
+                    8004
+                ],
+                "vnode_socket": [
+                    "localhost",
+                    8007
+                ]
+            },
+            "Bob": {
+                "app_socket": [
+                    "localhost",
+                    8008
+                ],
+                "cqc_socket": [
+                    "localhost",
+                    8021
+                ],
+                "vnode_socket": [
+                    "localhost",
+                    8022
+                ]
+            },
+            "Charlie": {
+                "app_socket": [
+                    "localhost",
+                    8024
+                ],
+                "cqc_socket": [
+                    "localhost",
+                    8025
+                ],
+                "vnode_socket": [
+                    "localhost",
+                    8026
+                ]
+            }
+        },
+        "topology": {
+            "Alice": [
+                "Charlie"
+            ],
+            "Bob": [
+                "Charlie"
+            ],
+            "Charlie": [
+                "Alice",
+                "Bob"
+            ]
+        }
+    }
+}
