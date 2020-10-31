@@ -1,23 +1,20 @@
-import time
-
 from simulaqron.network import Network
 
 
 def main():
     # Setup the network
-    network_config_file = \
-        "custom_network.json"
     nodes = ["Alice", "Bob", "Charlie"]
     topology = {"Alice": ["Charlie"], "Bob": ["Charlie"], "Charlie": ["Alice", "Bob"]}
     # network = Network(new=False, name="test", network_config_file=network_config_file, nodes=nodes, topology=topology)
-    network = Network(name="default",
+    network = Network(name="3_nodes_path",
                       nodes=nodes,
                       topology=topology,
-                      network_config_file=network_config_file,
                       force=True)
 
     # Start the network
     network.start(wait_until_running=True)
+
+    print(f"The network has started with topology: \n{network.topology}\n")
 
     input("Press Enter to stop the network... \n")
 
