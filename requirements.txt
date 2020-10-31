@@ -1,0 +1,2 @@
+cqc~=3.2.3
+simulaqron~=3.0.16
