@@ -20,7 +20,8 @@ def main():
         # Generate a raw_key_str in random basis
         for sifting_iteration in range(key_length_required // key_message_length * 3 + 3):
 
-            print("\nStep {}\n".format(sifting_iteration))
+            print("====================================================\n"
+                  "Step {}\n".format(sifting_iteration))
 
             raw_key_str = ''
             basis_str = ''
@@ -50,7 +51,6 @@ def main():
                 Charlie received Alice's basis: {msg}
                 """))
 
-
             for i in range(key_message_length):
                 if basis_str[i] == msg[i]:
                     sifted_key += raw_key_str[i]
@@ -60,7 +60,7 @@ def main():
             if is_key_length_reached:
                 break
 
-        print("\nCharlie's sifted key: {}".format(sifted_key))
+        print("Charlie's sifted key: {}\n".format(sifted_key))
 
 
 if __name__ == '__main__':
