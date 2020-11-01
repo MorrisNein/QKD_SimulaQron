@@ -1,5 +1,6 @@
 import time
 import random
+import bb84
 from textwrap import dedent
 
 from cqc.pythonLib import CQCConnection, qubit, CQCNoQubitError
@@ -82,4 +83,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    #main()
+    bb84.transmit('Alice', 'Charlie')
