@@ -1,12 +1,12 @@
 # QKD_Simulaqron
 
-Запуск текущей версии:
+Запуск:
 
-1. Сохрани весь проект в PyCharm
+1. Сохранить весь проект в PyCharm
   
-  1.1. Выполни 
+  1.1. Выполнить 
   <pre><code>pip install -r requirements.txt</code></pre>
   
-2. Запусти network_start.py
+2. Запустить network_start.py
 
-3. Запусти run.sh в отдельном окне
+3. Запустить run.sh в отдельном окне
