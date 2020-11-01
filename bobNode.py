@@ -1,12 +1,18 @@
-import newNode
+from node import Node
 
 
 def main():
-    bob = newNode.Node()
-    bob.initialize('Bob')
-    charlie_key = bob.transmit_key('Charlie')
-    alice_key = bob.decode_public_key(charlie_key)
-    print("bob received alice's key", alice_key)
+    bob = Node('Bob')
+    # Alice and Charlie make their key
+    bob.receive_key('Charlie')
+
+    # Charlie mixes Alice's and Bob's keys and sends the mix to Bob
+
+    bob.keys['Alice-Charlie'] = bob.receive_classical_bit_string()
+
+    bob.mix_keys(bob.keys['Alice-Charlie'], bob.keys['Charlie'], 'Alice')
+
+    print("Bob received Alice's key", bob.keys['Alice'])
 
 
 if __name__ == '__main__':

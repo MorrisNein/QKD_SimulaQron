@@ -5,7 +5,7 @@ def main():
     # Setup the network
     nodes = ["Alice", "Bob", "Charlie"]
     topology = {"Alice": ["Charlie"], "Bob": ["Charlie"], "Charlie": ["Alice", "Bob"]}
-    # network = Network(new=False, name="test", network_config_file=network_config_file, nodes=nodes, topology=topology)
+
     network = Network(name="default",
                       nodes=nodes,
                       topology=topology,
