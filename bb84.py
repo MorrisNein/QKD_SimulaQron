@@ -8,7 +8,7 @@ from service import decode_bytes_msg_to_bitstring, encode_bitstring_to_bytes_msg
     key_length_required, key_message_length
 
 
-def transmit(name: str, recipient: str):
+def transmit_key(name: str, recipient: str):
     # Initialize the connection
     with CQCConnection(name) as Transmitter:
 
@@ -66,7 +66,7 @@ def transmit(name: str, recipient: str):
     return sifted_key
 
 
-def receive(name: str, recipient: str):
+def receive_key(name: str, recipient: str):
     with CQCConnection(name) as Receiver:
 
         sifted_key = ''

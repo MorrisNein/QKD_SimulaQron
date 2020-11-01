@@ -1,69 +1,23 @@
-import random
-import bb84
-from textwrap import dedent
-
-from cqc.pythonLib import CQCConnection
-
-from service import decode_bytes_msg_to_bitstring, encode_bitstring_to_bytes_msg,\
-    key_length_required, key_message_length
+import newNode
+import service
 
 
 def main():
-    # Initialize the connection
-    with CQCConnection("Charlie") as Charlie:
+    charlie = newNode.Node()
+    charlie.initialize('Charlie')
+    alice_key = charlie.receive_key('Alice')
 
-        sifted_key = ''
-        # key_length_required = 16
-        # max value is 8
-        # key_message_length = 8 * 3
-        is_key_length_reached = False
-
-        # Generate a raw_key_str in random basis
-        for sifting_iteration in range(key_length_required // key_message_length * 3 + 3):
-
-            print("====================================================\n"
-                  "Step {}\n".format(sifting_iteration))
-
-            raw_key_str = ''
-            basis_str = ''
-
-            for i in range(key_message_length):
-                basis_str += str(random.randint(0, 1))
-
-                q = Charlie.recvQubit()
-
-                # Choose the basis to measure
-                if int(basis_str[i]):
-                    q.H()
-
-                raw_key_str += str(q.measure())
-
-            # print("Charlie's key: {}".format(raw_key_str))
-            # print("Charlie's basis: {}".format(basis_str))
-
-            Charlie.sendClassical("Alice", encode_bitstring_to_bytes_msg(basis_str))
-            msg = Charlie.recvClassical()
-            msg = decode_bytes_msg_to_bitstring(msg, key_message_length)
-            # print("Charlie received Alice's basis: {}".format(msg))
-            print(dedent(
-                f"""
-                Charlie's key: {raw_key_str}
-                Charlie's basis: {basis_str}
-                Charlie received Alice's basis: {msg}
-                """))
-
-            for i in range(key_message_length):
-                if basis_str[i] == msg[i]:
-                    sifted_key += raw_key_str[i]
-                if len(sifted_key) >= key_length_required:
-                    is_key_length_reached = True
-                    break
-            if is_key_length_reached:
-                break
-
-        print("Charlie's sifted key: {}\n".format(sifted_key))
+    bob_key = charlie.receive_key('Bob')
+    '''
+    public_key = str(bin(int(alice_key, 2) ^ int(bob_key, 2))[2:])
+    print('alice', alice_key)
+    print('bob', bob_key)
+    print('public', '0' * (service.key_length_required - len(public_key)) + public_key)
+    decoded_alice = str(bin(int(bob_key, 2) ^ int(public_key, 2))[2:])
+    print('decoded alice', '0' * (service.key_length_required - len(decoded_alice)) + decoded_alice)
+    '''
+    charlie.publish_key('Alice', 'Bob')
 
 
 if __name__ == '__main__':
-    #main()
-    bb84.receive('Charlie', 'Alice')
+    main()
