@@ -12,7 +12,7 @@ class Node(object):
         self.name = name
         self.keys = {}
 
-    def transmit_key(self, receiver):
+    def transmit_key(self, receiver: str, logging_level: int = 1):
         # Initialize the connection
         with CQCConnection(self.name) as Me:
 
@@ -47,17 +47,19 @@ class Node(object):
                         time.sleep(0.2)
                         Me.sendQubit(q, receiver)
 
-                # print("====================================================\n"
-                #       "Sifting iteration {}\n".format(sifting_iteration))
+                if logging_level >= 2:
+                    print("====================================================\n"
+                          "Sifting iteration {}\n".format(sifting_iteration))
                 msg = Me.recvClassical()
                 msg = decode_bytes_msg_to_bit_string(msg, key_message_length)
 
-                # print(dedent(
-                #     f"""
-                #                 {self.name}'s key: {raw_key_str}
-                #                 {self.name}'s basis: {basis_str}
-                #                 {self.name} received {receiver}'s basis: {msg}
-                #                 """))
+                if logging_level >= 2:
+                    print(dedent(
+                        f"""
+                                    {self.name}'s key: {raw_key_str}
+                                    {self.name}'s basis: {basis_str}
+                                    {self.name} received {receiver}'s basis: {msg}
+                                    """))
 
                 Me.sendClassical(receiver, encode_bit_string_to_bytes_msg(basis_str))
 
@@ -70,13 +72,13 @@ class Node(object):
                 if is_key_length_reached:
                     break
 
-            # print("{}'s sifted key: {}\n".format(self.name, sifted_key))
-            print(f"{self.name}'s sifted key to {receiver}: {sifted_key}\n")
+            if logging_level >= 1:
+                print(f"{self.name}'s sifted key to {receiver}: {sifted_key}")
 
         self.keys[receiver] = sifted_key
         return sifted_key
 
-    def receive_key(self, transmitter):
+    def receive_key(self, transmitter: str, logging_level: int = 1):
         with CQCConnection(self.name) as Me:
 
             sifted_key = ''
@@ -103,12 +105,13 @@ class Node(object):
 
                 msg = Me.recvClassical()
                 msg = decode_bytes_msg_to_bit_string(msg, key_message_length)
-                # print(dedent(
-                #     f"""
-                #     {self.name}'s key: {raw_key_str}
-                #     {self.name}'s basis: {basis_str}
-                #     {self.name} received {transmitter}'s basis: {msg}
-                #     """))
+                if logging_level >= 2:
+                    print(dedent(
+                        f"""
+                        {self.name}'s key: {raw_key_str}
+                        {self.name}'s basis: {basis_str}
+                        {self.name} received {transmitter}'s basis: {msg}
+                        """))
 
                 for i in range(key_message_length):
                     if basis_str[i] == msg[i]:
@@ -118,24 +121,32 @@ class Node(object):
                         break
                 if is_key_length_reached:
                     break
-
-            print(f"{self.name}'s sifted key to {transmitter}: {sifted_key}\n")
+            if logging_level >= 1:
+                print(f"{self.name}'s sifted key to {transmitter}: {sifted_key}")
         self.keys[transmitter] = sifted_key
         return sifted_key
 
-    def mix_keys(self, key_1, key_2, new_key_name):
-        self.keys[new_key_name] = xor_bit_strings(key_1, key_2)
+    def mix_keys(self, key_1: str, key_2: str, new_key_name: str = ''):
+        mixed_key = xor_bit_strings(key_1, key_2)
+        if new_key_name != '':
+            self.keys[new_key_name] = mixed_key
+        return mixed_key
 
-    def send_classical_bit_string(self, node_receiver, msg):
+    def send_classical_bit_string(self, node_receiver: str, msg: str, key: str = ''):
+        if key != '':
+            assert len(key) == len(msg)
+            msg = xor_bit_strings(msg, key)
         with CQCConnection(self.name) as Me:
             Me.sendClassical(
                         node_receiver,
                         encode_bit_string_to_bytes_msg(msg)
                     )
 
-    def receive_classical_bit_string(self, length=key_length_required):
+    def receive_classical_bit_string(self, length: str = key_length_required, key: str = ''):
         with CQCConnection(self.name) as Me:
             msg = Me.recvClassical()
             msg = decode_bytes_msg_to_bit_string(msg, length)
+            if key != '':
+                assert len(key) == len(msg)
+                msg = xor_bit_strings(msg, key)
             return msg
-
