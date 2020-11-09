@@ -1,5 +1,5 @@
 if __name__ != "__main__":
-    key_length_required = 16
+    default_key_length_required = 16
     # key_message_length must be 8 * n
     key_message_length = 8 * 1
 

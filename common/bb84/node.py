@@ -3,7 +3,7 @@ import random
 from textwrap import dedent
 from cqc.pythonLib import CQCConnection, qubit, CQCNoQubitError
 from common.bb84.service import decode_bytes_msg_to_bit_string, encode_bit_string_to_bytes_msg,\
-    key_length_required, key_message_length, xor_bit_strings
+    default_key_length_required, key_message_length, xor_bit_strings
 
 
 class Node(object):
@@ -12,7 +12,7 @@ class Node(object):
         self.name = name
         self.keys = {}
 
-    def transmit_key(self, receiver: str, logging_level: int = 1):
+    def transmit_key(self, receiver: str, key_length_required: int = default_key_length_required, logging_level: int = 1):
         # Initialize the connection
         with CQCConnection(self.name) as Me:
 
@@ -78,7 +78,7 @@ class Node(object):
         self.keys[receiver] = sifted_key
         return sifted_key
 
-    def receive_key(self, transmitter: str, logging_level: int = 1):
+    def receive_key(self, transmitter: str, key_length_required: int = default_key_length_required, logging_level: int = 1):
         with CQCConnection(self.name) as Me:
 
             sifted_key = ''
@@ -142,7 +142,7 @@ class Node(object):
                         encode_bit_string_to_bytes_msg(msg)
                     )
 
-    def receive_classical_bit_string(self, length: str = key_length_required, key: str = ''):
+    def receive_classical_bit_string(self, length: str = default_key_length_required, key: str = ''):
         with CQCConnection(self.name) as Me:
             msg = Me.recvClassical()
             msg = decode_bytes_msg_to_bit_string(msg, length)
@@ -150,3 +150,33 @@ class Node(object):
                 assert len(key) == len(msg)
                 msg = xor_bit_strings(msg, key)
             return msg
+
+    def send_classical_byte_string(self, node_receiver: str, msg: bytes, key: str = ''):
+        if key != '':
+            encoded_message = []
+            for i in range(len(msg)):
+                encoded_message.append(msg[i] ^ int(key[8*i:8*(i+1)], 2))
+        else:
+            encoded_message = msg
+        with CQCConnection(self.name) as Me:
+            Me.sendClassical(node_receiver, encoded_message)
+
+    def receive_classical_byte_string(self, key: str = ''):
+        with CQCConnection(self.name) as Me:
+            msg = Me.recvClassical()
+            if key != '':
+                decoded_message = []
+                for i in range(len(msg)):
+                    decoded_message.append(msg[i] ^ int(key[8*i:8*(i+1)], 2))
+            else:
+                decoded_message = msg
+            return decoded_message
+
+    def send_classical_int(self, node: str, msg: int):
+        with CQCConnection(self.name) as Me:
+            Me.sendClassical(node, msg)
+
+    def receive_classical_int(self, node: str):
+        with CQCConnection(self.name) as Me:
+            msg = Me.recvClassical(node)
+        return msg
