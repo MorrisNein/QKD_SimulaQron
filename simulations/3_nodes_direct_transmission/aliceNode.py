@@ -8,7 +8,7 @@ def main():
     from common.bb84.service import default_key_length_required
 
     alice = Node('Alice')
-    logging_level = 2
+    logging_level = 1
 
     quantum_protected_key = bin(getrandbits(default_key_length_required))[2:]
     quantum_protected_key = "0"*(default_key_length_required-len(quantum_protected_key)) + quantum_protected_key

@@ -6,7 +6,7 @@ def main():
     from common.bb84.node import Node
 
     charlie = Node('Charlie')
-    logging_level = 2
+    logging_level = 1
     # Alice sends key
     charlie.receive_key('Alice', logging_level=logging_level)
     quantum_protected_key = charlie.receive_classical_bit_string(key=charlie.keys['Alice'])
