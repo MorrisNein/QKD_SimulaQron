@@ -1,10 +1,13 @@
 if __name__ != "__main__":
     # Default bit length of generated key. Must be 8*n
-    default_key_length_required = 8
+    default_key_length_required = 1024
     # Default bit length of portions of key generation. Currently must be no more than 256.
-    default_key_message_length = 256
+    default_key_message_length = 1024
     # Default quantum channel gain
-    default_g_q = 0.01
+    default_g_q = 0.25
+    # Default delta. The probability of changing basis of transmission.
+    # Defines protocol gain g_p as follows: g_p = delta**2
+    default_delta = 0.5
 
     def decode_bytes_msg_to_bit_string(s, length):
         s = bin(int(s.hex(), 16))[2:]

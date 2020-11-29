@@ -3,8 +3,9 @@ import random
 import numpy as np
 from textwrap import dedent
 from cqc.pythonLib import CQCConnection, qubit, CQCNoQubitError
-from common.bb84.service import decode_bytes_msg_to_bit_string, encode_bit_string_to_bytes_msg, \
-    default_key_length_required, default_key_message_length, xor_bit_strings, default_g_q
+# from common.bb84.service import decode_bytes_msg_to_bit_string, encode_bit_string_to_bytes_msg, \
+#     default_key_length_required, default_key_message_length, xor_bit_strings, default_g_q, default_delta
+from common.bb84.service import *
 
 
 class Node(object):
@@ -14,7 +15,7 @@ class Node(object):
         self.keys = {}
 
     def transmit_key(self, receiver: str, key_length_required: int = default_key_length_required,
-                     g_q: int = default_g_q, logging_level: int = 1):
+                     g_q: int = default_g_q, delta: float = default_delta, logging_level: int = 1):
         """
         Starts quantum key distribution between current node and the receiver node.
         The receiver node must run function receive_key simultaneously.
@@ -32,6 +33,9 @@ class Node(object):
             Quantum channel gain. Float in range [0, 1].
             By default the value is taken from bb84.service.
             The param is needed ONLY to estimate optimal sifting iterations limit.
+        :param delta:
+            Probability of choosing basis "0" for encoding. Default value is 0.5.
+            Usually the same as receiver has.
         :return:
         """
 
@@ -48,23 +52,20 @@ class Node(object):
                 raw_key_str = ''
                 basis_changed_positions = []
 
-                for i in range(key_message_length):
+                for pos_num in range(key_message_length):
                     # ================= Raw key message =================
                     # Create a qubit in a current node
                     q = qubit(Me)  # CQC
 
                     # Encode the qubit by random number
                     raw_key_str += str(random.randint(0, 1))
-                    if int(raw_key_str[i]):
+                    if int(raw_key_str[pos_num]):
                         q.X()
 
                     # Choose random basis to send
-                    if random.randint(0, 1):
-                        basis_changed_positions += [i]
+                    if delta <= random.random():
+                        basis_changed_positions += [pos_num]
                         q.H()
-                        raw_key_str += "1"
-                    else:
-                        raw_key_str += "0"
 
                     # Send qubit to receiver
                     try:
@@ -92,34 +93,30 @@ class Node(object):
                 # Send the changed basis positions
                 self.send_classical_int_list(receiver, basis_changed_positions)  # CQC4
 
-                if logging_level >= 2:
-                    bases_str = "".join(
-                        [str(int(pos in basis_changed_positions)) for pos in received_key_positions_o]
-                    )
-                    bases_str_o = "".join(
-                        [str(int(pos in basis_changed_positions_o)) for pos in received_key_positions_o]
-                    )
-                    print(dedent(
-                        f"""
-                        {self.name}'s key: {raw_key_str}
-                        {self.name}'s bases: {bases_str}
-                        {self.name} received {receiver}'s bases: {bases_str_o}
-                        {self.name}'s basis_changed_positions: {basis_changed_positions}
-                        {self.name} knows that key positions received by {receiver} are: {received_key_positions_o}
-                        """))
-
                 # ================= Sifting =================
-                for i, pos in enumerate(received_key_positions_o):
+                same_bases_number = 0
+                for pos_num, pos in enumerate(received_key_positions_o):
                     # XNOR: true if position is in both lists or neither of them
                     # We do not use bases_str and bases_str_o
                     # as their main purpose is logging message.
                     if not ((pos in basis_changed_positions) ^ (pos in basis_changed_positions_o)):
-                        sifted_key += raw_key_str[i]
+                        sifted_key += raw_key_str[pos_num]
+                        same_bases_number += 1
 
-                    # ================= Break check =================
+                    # ================= Sifting iteration break check =================
                     if len(sifted_key) >= key_length_required:
                         is_key_length_reached = True
                         break
+
+                # ================= Protocol gain metric =================
+                # (pos_num + 1) value now contains number of key positions checked before break
+                g_p_iter = same_bases_number / (pos_num + 1)
+                if sifting_iteration == 0:
+                    g_p = g_p_iter
+                else:
+                    g_p = (g_p + g_p_iter) / 2
+
+                # ================= Sifting iteration break check =================
                 if is_key_length_reached:
                     break
             else:
@@ -127,13 +124,14 @@ class Node(object):
 
             # ================= Sifted key report =================
             if logging_level >= 1:
-                print(f"{self.name}'s sifted key to {receiver}: {sifted_key}")
+                print(f"{self.name}'s sifted key to {receiver}: {sifted_key}\n"
+                      f"Empirical protocol gain is {round(g_p, 2)} with delta {delta}\n")
 
         self.keys[receiver] = sifted_key
         return sifted_key
 
     def receive_key(self, transmitter: str, key_length_required: int = default_key_length_required,
-                    g_q: int = default_g_q, logging_level: int = 1):
+                    g_q: int = default_g_q, delta: float = default_delta, logging_level: int = 1):
         """
         Receiver part of quantum key distribution.
         The transmitter node must run function transmit_key simultaneously.
@@ -151,6 +149,9 @@ class Node(object):
             0 - mute;
             1 - final sifted key;
             2 - every sifting iteration result.
+        :param delta:
+            Probability of choosing basis "0" for decoding. Default value is 0.5.
+            Usually the same as transmitter has.
         :return:
         """
 
@@ -184,7 +185,7 @@ class Node(object):
                     received_key_positions += [i]
 
                     # Choose random basis to measure the received qubit
-                    if random.randint(0, 1):
+                    if delta <= random.random():
                         basis_changed_positions += [i]
                         q.H()
                     raw_key_str += str(q.measure())
