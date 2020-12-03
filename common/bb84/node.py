@@ -3,9 +3,11 @@ import random
 import numpy as np
 from textwrap import dedent
 from cqc.pythonLib import CQCConnection, qubit, CQCNoQubitError
-# from common.bb84.service import decode_bytes_msg_to_bit_string, encode_bit_string_to_bytes_msg, \
-#     default_key_length_required, default_key_message_length, xor_bit_strings, default_g_q, default_delta
 from common.bb84.service import *
+from common.bb84.cascade import run_cascade, calculate_block_parity
+
+ask_parity_msg_num = 0
+answ_parity_msg_num = 0
 
 
 class Node(object):
@@ -14,8 +16,11 @@ class Node(object):
         self.name = name
         self.keys = {}
 
+    # ================ QKD ================
+
     def transmit_key(self, receiver: str, key_length_required: int = default_key_length_required,
-                     g_q: int = default_g_q, delta: float = default_delta, logging_level: int = 1):
+                     g_q: int = default_g_q, delta: float = default_delta, logging_level: int = 1,
+                     qber: float = default_qber):
         """
         Starts quantum key distribution between current node and the receiver node.
         The receiver node must run function receive_key simultaneously.
@@ -36,6 +41,8 @@ class Node(object):
         :param delta:
             Probability of choosing basis "0" for encoding. Default value is 0.5.
             Usually the same as receiver has.
+        :param qber:
+            Probability of quantum bit-flip.
         :return:
         """
 
@@ -44,7 +51,7 @@ class Node(object):
 
         # Initialize the connection
         with CQCConnection(self.name) as Me:
-            sifted_key = ''
+            correct_key = ''
             is_key_length_reached = False
 
             # Generate a raw_key_str in random basis
@@ -93,6 +100,23 @@ class Node(object):
                 # Send the changed basis positions
                 self.send_classical_int_list(receiver, basis_changed_positions)  # CQC4
 
+                # ================= Logging =================
+                if logging_level >= 2:
+                    bases_str = "".join(
+                        [str(int(pos in basis_changed_positions)) for pos in received_key_positions_o]
+                    )
+                    bases_str_o = "".join(
+                        [str(int(pos in basis_changed_positions_o)) for pos in received_key_positions_o]
+                    )
+                    print(dedent(
+                        f"""	
+                        {self.name}'s key: {raw_key_str}	
+                        {self.name}'s bases: {bases_str}	
+                        {self.name} received {receiver}'s bases: {bases_str_o}	
+                        {self.name}'s basis_changed_positions: {basis_changed_positions}	
+                        {self.name} knows that key positions received by {receiver} are: {received_key_positions_o}	
+                        """))
+
                 # ================= Sifting =================
                 same_bases_number = 0
                 for pos_num, pos in enumerate(received_key_positions_o):
@@ -100,11 +124,11 @@ class Node(object):
                     # We do not use bases_str and bases_str_o
                     # as their main purpose is logging message.
                     if not ((pos in basis_changed_positions) ^ (pos in basis_changed_positions_o)):
-                        sifted_key += raw_key_str[pos_num]
+                        correct_key += raw_key_str[pos_num]
                         same_bases_number += 1
 
                     # ================= Sifting iteration break check =================
-                    if len(sifted_key) >= key_length_required:
+                    if len(correct_key) >= key_length_required:
                         is_key_length_reached = True
                         break
 
@@ -124,14 +148,24 @@ class Node(object):
 
             # ================= Sifted key report =================
             if logging_level >= 1:
-                print(f"{self.name}'s sifted key to {receiver}: {sifted_key}\n"
+                print(f"{self.name}'s sifted key to {receiver}: {correct_key}\n"
                       f"Empirical protocol gain is {round(g_p, 2)} with delta {delta}\n")
 
-        self.keys[receiver] = sifted_key
-        return sifted_key
+        # ================= Receiver's key adjustment =================
+        self.correct_key_errors_as_transmitter(receiver, correct_key, qber)
+
+        # ================= Correct key report =================
+        if logging_level >= 1:
+            print(f"{self.name}'s correct key to {receiver}: {correct_key}\n"
+                  f"Empirical protocol gain is {round(g_p, 2)} with delta {delta}\n")
+
+        # ================= The end =================
+        self.keys[receiver] = correct_key
+        return correct_key
 
     def receive_key(self, transmitter: str, key_length_required: int = default_key_length_required,
-                    g_q: int = default_g_q, delta: float = default_delta, logging_level: int = 1):
+                    g_q: int = default_g_q, delta: float = default_delta, logging_level: int = 1,
+                    qber: float = default_qber):
         """
         Receiver part of quantum key distribution.
         The transmitter node must run function transmit_key simultaneously.
@@ -152,6 +186,8 @@ class Node(object):
         :param delta:
             Probability of choosing basis "0" for decoding. Default value is 0.5.
             Usually the same as transmitter has.
+        :param qber:
+            Probability of quantum bit-flip.
         :return:
         """
 
@@ -174,12 +210,14 @@ class Node(object):
                     # ================= Raw key message =================
                     q = Me.recvQubit()  # CQC1
 
+                    # ================= Loss by quantum channel gain  =================
                     # Here we insert the loss by quantum channel gain < 1.
                     # If g_q is less or equal than a random uniform number [0,1],
                     # then the next iteration is being started.
                     if g_q <= random.random():
                         q.release()
-                        continue
+                        continue  # the qubit is lost, proceed to the next one
+                    # ==================================
 
                     # Remember current position to notify transmitter that it was received properly
                     received_key_positions += [i]
@@ -188,6 +226,12 @@ class Node(object):
                     if delta <= random.random():
                         basis_changed_positions += [i]
                         q.H()
+                    # ================= Error by QBER  =================
+                    # Here we insert the bif-flip errors by qber > 0.
+                    if random.random() <= qber:
+                        q.X()
+                    # ==================================
+
                     raw_key_str += str(q.measure())
 
                 # ================= Raw key adjustment =================
@@ -236,14 +280,72 @@ class Node(object):
             if logging_level >= 1:
                 print(f"{self.name}'s sifted key to {transmitter}: {sifted_key}")
 
-        self.keys[transmitter] = sifted_key
-        return sifted_key
+        # ================= Receiver's key adjustment =================
+        correct_key = self.correct_key_errors_as_receiver(transmitter, sifted_key, qber)
+        # ================= Correct key report =================
+        if logging_level >= 1:
+            print(f"{self.name}'s correct key to {transmitter}: {correct_key}")
+
+        # ================= The end =================
+        self.keys[transmitter] = correct_key
+        return correct_key
 
     def mix_keys(self, key_1: str, key_2: str, new_key_name: str = ''):
         mixed_key = xor_bit_strings(key_1, key_2)
         if new_key_name != '':
             self.keys[new_key_name] = mixed_key
         return mixed_key
+
+    # ================ errors correction ================
+    def correct_key_errors_as_receiver(self, transmitter, initial_key, qber):
+        if qber == 0:
+            return
+
+        # self.send_classical_byte_string(transmitter, "Error correction start".encode("utf-8"))
+
+        # print(f"{self.name} starts asking parity questions")
+
+        corrected_key = run_cascade(lambda k_p: self.ask_block_parity(transmitter, k_p),
+                                    initial_key,
+                                    qber)
+
+        self.send_classical_int_list(transmitter, [])
+
+        return corrected_key
+
+    def correct_key_errors_as_transmitter(self, node_partner_name, correct_key, qber):
+        t1 = time.time()
+
+        if qber == 0:
+            return
+        keep_answering = True
+        while keep_answering:
+            keep_answering = self.answer_block_parity(node_partner_name, correct_key)
+        t2 = time.time()
+        print(f"CASCADE run {round(t2 - t1, 2)} s")
+
+    def ask_block_parity(self, node_partner_name, key_block_positions):
+        global ask_parity_msg_num
+        ask_parity_msg_num += 1
+        # print(f"{self.name} asks parity_msg_num {ask_parity_msg_num}")
+        self.send_classical_int_list(node_partner_name, key_block_positions)
+        return self.receive_classical_int_list(1)[0]
+
+    def answer_block_parity(self, node_partner_name, correct_key):
+        global answ_parity_msg_num
+        answ_parity_msg_num += 1
+        msg = self.receive_classical_int_list(list_max_length=len(correct_key))
+        if not msg:
+            return False
+
+        key_block_positions = msg
+        parity = calculate_block_parity(correct_key, key_block_positions)
+        # print(f"{self.name} answers parity_msg_num {answ_parity_msg_num}")
+        self.send_classical_int_list(node_partner_name, [parity])
+
+        return True
+
+    # ================ classic messages exchange ================
 
     def send_classical_bit_string(self, node_receiver: str, msg: str, key: str = ''):
         if key != '':

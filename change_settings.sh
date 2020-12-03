@@ -1,6 +1,6 @@
 #!/bin/bash
 
-venv/bin/simulaqron set max-qubits 500
+venv/bin/simulaqron set max-qubits 1000
 venv/bin/simulaqron set noisy-qubits off
 venv/bin/simulaqron set t1 1.0
 venv/bin/simulaqron set backend stabilizer
