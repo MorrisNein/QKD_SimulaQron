@@ -7,6 +7,8 @@ def main():
     from common.bb84.node import Node
     alice = Node('Alice')
 
+    # print(alice.receive_classical_bit_string(3))
+
     t1 = t.time()
     alice.transmit_key('Bob', logging_level=0)
     t2 = t.time()

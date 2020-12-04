@@ -57,7 +57,7 @@ class Node(object):
             # Generate a raw_key_str in random basis
             for sifting_iteration in range(sifting_iterations_limit):
                 raw_key_str = ''
-                basis_changed_positions = []
+                bases_str = ''
 
                 for pos_num in range(key_message_length):
                     # ================= Raw key message =================
@@ -71,8 +71,10 @@ class Node(object):
 
                     # Choose random basis to send
                     if delta <= random.random():
-                        basis_changed_positions += [pos_num]
+                        bases_str += '1'
                         q.H()
+                    else:
+                        bases_str += '0'
 
                     # Send qubit to receiver
                     try:
@@ -92,38 +94,28 @@ class Node(object):
                 received_key_positions_o = list(self.receive_classical_int_list(key_message_length))  # CQC2
                 # ... and keep only the same positions of key and basis
                 raw_key_str = ''.join([raw_key_str[pos] for pos in received_key_positions_o])
-                basis_changed_positions = [pos for pos in basis_changed_positions if pos in received_key_positions_o]
+                bases_str = ''.join([bases_str[pos] for pos in received_key_positions_o])
 
                 # ================= Sifting messages =================
                 # Get other node's positions of changed basis
-                basis_changed_positions_o = self.receive_classical_int_list(key_message_length)  # CQC3
+                bases_str_o = self.receive_classical_bit_string(len(received_key_positions_o))  # CQC3
                 # Send the changed basis positions
-                self.send_classical_int_list(receiver, basis_changed_positions)  # CQC4
+                self.send_classical_bit_string(receiver, bases_str)  # CQC4
 
                 # ================= Logging =================
                 if logging_level >= 2:
-                    bases_str = "".join(
-                        [str(int(pos in basis_changed_positions)) for pos in received_key_positions_o]
-                    )
-                    bases_str_o = "".join(
-                        [str(int(pos in basis_changed_positions_o)) for pos in received_key_positions_o]
-                    )
                     print(dedent(
                         f"""	
                         {self.name}'s key: {raw_key_str}	
                         {self.name}'s bases: {bases_str}	
                         {self.name} received {receiver}'s bases: {bases_str_o}	
-                        {self.name}'s basis_changed_positions: {basis_changed_positions}	
                         {self.name} knows that key positions received by {receiver} are: {received_key_positions_o}	
                         """))
 
                 # ================= Sifting =================
                 same_bases_number = 0
-                for pos_num, pos in enumerate(received_key_positions_o):
-                    # XNOR: true if position is in both lists or neither of them
-                    # We do not use bases_str and bases_str_o
-                    # as their main purpose is logging message.
-                    if not ((pos in basis_changed_positions) ^ (pos in basis_changed_positions_o)):
+                for pos_num, _ in enumerate(received_key_positions_o):
+                    if bases_str[pos_num] == bases_str_o[pos_num]:
                         correct_key += raw_key_str[pos_num]
                         same_bases_number += 1
 
@@ -203,7 +195,7 @@ class Node(object):
             for sifting_iteration in range(sifting_iterations_limit):
 
                 raw_key_str = ''
-                basis_changed_positions = []
+                bases_str = ''
                 received_key_positions = []
 
                 for i in range(key_message_length):
@@ -224,8 +216,10 @@ class Node(object):
 
                     # Choose random basis to measure the received qubit
                     if delta <= random.random():
-                        basis_changed_positions += [i]
+                        bases_str += '1'
                         q.H()
+                    else:
+                        bases_str += '0'
                     # ================= Error by QBER  =================
                     # Here we insert the bif-flip errors by qber > 0.
                     if random.random() <= qber:
@@ -239,33 +233,23 @@ class Node(object):
 
                 # ================= Sifting messages =================
                 # Send the node's positions of changed basis
-                self.send_classical_int_list(transmitter, basis_changed_positions)  # CQC3
+                self.send_classical_bit_string(transmitter, bases_str)  # CQC3
                 # Get other node's positions of changed basis
-                basis_changed_positions_o = self.receive_classical_int_list(key_message_length)  # CQC4
+                bases_str_o = self.receive_classical_bit_string(len(received_key_positions)) # CQC4
 
                 # ================= Logging =================
                 if logging_level >= 2:
-                    bases_str = "".join(
-                        [str(int(pos in basis_changed_positions)) for pos in received_key_positions]
-                    )
-                    bases_str_o = "".join(
-                        [str(int(pos in basis_changed_positions_o)) for pos in received_key_positions]
-                    )
                     print(dedent(
                         f"""
                         {self.name}'s key: {raw_key_str}
                         {self.name}'s bases: {bases_str}
                         {self.name} received {transmitter}'s bases: {bases_str_o}
-                        {self.name}'s basis_changed_positions: {basis_changed_positions}
                         """))
 
                 # ================= Sifting =================
-                for i, pos in enumerate(received_key_positions):
-                    # XNOR: true if position is in both lists or neither of them
-                    # We do not use bases_str and bases_str_o
-                    # as their main purpose is logging message.
-                    if not ((pos in basis_changed_positions) ^ (pos in basis_changed_positions_o)):
-                        sifted_key += raw_key_str[i]
+                for pos_num, _ in enumerate(received_key_positions):
+                    if bases_str[pos_num] == bases_str_o[pos_num]:
+                        sifted_key += raw_key_str[pos_num]
 
                     # ================= Break check =================
                     if len(sifted_key) >= key_length_required:
@@ -297,13 +281,10 @@ class Node(object):
         return mixed_key
 
     # ================ errors correction ================
+
     def correct_key_errors_as_receiver(self, transmitter, initial_key, qber):
         if qber == 0:
             return
-
-        # self.send_classical_byte_string(transmitter, "Error correction start".encode("utf-8"))
-
-        # print(f"{self.name} starts asking parity questions")
 
         corrected_key = run_cascade(lambda k_p: self.ask_block_parity(transmitter, k_p),
                                     initial_key,
@@ -347,26 +328,67 @@ class Node(object):
 
     # ================ classic messages exchange ================
 
-    def send_classical_bit_string(self, node_receiver: str, msg: str, key: str = ''):
-        if key != '':
-            assert len(key) == len(msg)
-            msg = xor_bit_strings(msg, key)
-        with CQCConnection(self.name) as Me:
-            Me.sendClassical(
-                node_receiver,
-                encode_bit_string_to_bytes_msg(msg)
-            )
+    def send_classical_bit_string(self, receiver: str, msg: str, key: str = ''):
+        """
+        Function for sending compact bit-strings.
+        :param receiver:
+            Receiver node name specified in the network topology.
+        :param msg:
+            String consisting of 0 and 1.
+        :param key:
+            Bit-string key for encoding via XOR. Must be equal to len(msg)
+        :return:
+        """
+        msg_len = len(msg)
 
-    def receive_classical_bit_string(self, length: str = default_key_length_required, key: str = ''):
+        if key != '':
+            assert len(key) == msg_len
+            msg = xor_bit_strings(msg, key)
+
+        if msg_len is not None:
+            # Converting the string to natural number of bytes
+            msg = '0'*((8 - (msg_len % 8)) % 8) + msg
+
+        with CQCConnection(self.name) as Me:
+            if msg_len != 0:
+                Me.sendClassical(
+                    receiver,
+                    encode_bit_string_to_bytes_msg(msg)
+                )
+            else:
+                Me.sendClassical(
+                    receiver,
+                    "empty_string".encode("utf-8")
+                )
+
+    def receive_classical_bit_string(self, msg_len: int = None, key: str = ''):
+        """
+        Function for receiving compact bit-strings.
+        :param msg_len:
+            Length of string. Must be specified if (msg_len % 8) != 0.
+            The receiver must also know the length in this case.
+        :param key:
+            Bit-string key for encoding via XOR. Must be equal to len(msg)
+        :return:
+        """
         with CQCConnection(self.name) as Me:
             msg = Me.recvClassical()
-            msg = decode_bytes_msg_to_bit_string(msg, length)
+            msg_bytes = len(msg)
+
+            if msg == "empty_string".encode("utf-8"):
+                return ""
+
+            if msg_len is None:
+                msg_len = msg_bytes * 8
+
+            msg = decode_bytes_msg_to_bit_string(msg, msg_len)
+
             if key != '':
                 assert len(key) == len(msg)
                 msg = xor_bit_strings(msg, key)
             return msg
 
-    def send_classical_byte_string(self, node_receiver: str, msg: bytes, key: str = ''):
+    def send_classical_byte_string(self, receiver: str, msg: bytes, key: str = ''):
         if key != '':
             encoded_message = []
             for i in range(len(msg)):
@@ -374,7 +396,7 @@ class Node(object):
         else:
             encoded_message = msg
         with CQCConnection(self.name) as Me:
-            Me.sendClassical(node_receiver, encoded_message)
+            Me.sendClassical(receiver, encoded_message)
 
     def receive_classical_byte_string(self, key: str = ''):
         with CQCConnection(self.name) as Me:
@@ -391,8 +413,10 @@ class Node(object):
         """
         This function was made to avoid error when sending empty lists
         or integers >256.
-        :param receiver: Receiver node name specified in the network topology.
-        :param msg: List of integers each <= 2**16.
+        :param receiver:
+            Receiver node name specified in the network topology.
+        :param msg:
+            List of integers each <= 2**16.
         :return:
         """
         msg = np.array(msg)

@@ -1,10 +1,10 @@
 if __name__ != "__main__":
     # Default bit length of generated key. Must be 8*n
-    default_key_length_required = 1024
-    # Default bit length of portions of key generation. Currently must be no more than 256.
-    default_key_message_length = 2048
+    default_key_length_required = 128
+    # Default bit length of portions of key generation. Currently must be no more than 2**16.
+    default_key_message_length = 1024
     # Default quantum channel gain
-    default_g_q = 0.25
+    default_g_q = 0.01
     # Default delta. The probability of changing basis of transmission.
     # Defines protocol gain g_p as follows: g_p = delta**2 - 2*delta + 1
     default_delta = 0.5
@@ -18,7 +18,7 @@ if __name__ != "__main__":
 
     def encode_bit_string_to_bytes_msg(bitstring):
         bitstring = "".join(bitstring.split())
-        assert len(bitstring) % 8 == 0
+        # assert len(bitstring) % 8 == 0
         return [int(bitstring[i:i + 8], 2) for i in range(0, len(bitstring), 8)]
 
     def xor_bit_strings(str_1, str_2):
