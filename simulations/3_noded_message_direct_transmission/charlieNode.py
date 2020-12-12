@@ -11,7 +11,7 @@ def main():
     key_length = 40
     # Alice sends key
     charlie.receive_key('Alice', key_length_required=key_length, logging_level=1)
-    encoded_message = charlie.receive_classical_byte_string(key=charlie.keys['Alice'])
+    encoded_message = charlie.receive_classical_string(key=charlie.keys['Alice'])
     # print(f"Charlie's quantum protected key: {quantum_protected_key}")
 
     charlie.transmit_key('Bob', key_length_required=key_length)
