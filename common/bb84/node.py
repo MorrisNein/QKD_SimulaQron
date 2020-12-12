@@ -1,13 +1,52 @@
 import time
 import random
+import threading
+from functools import wraps
 import numpy as np
 from textwrap import dedent
 from cqc.pythonLib import CQCConnection, qubit, CQCNoQubitError
 from common.bb84.service import *
 from common.bb84.cascade import run_cascade, calculate_block_parity
 
+mutex_cascade = threading.Lock()
+mutex_send_classical_message = threading.Lock()
+mutex_receive_classical_message = threading.Lock()
+
 ask_parity_msg_count = 0
 reveal_parity_msg_count = 0
+
+
+def send_message_wrapper(func):
+    @wraps(func)
+    def wrapper_decorator(*args, **kwargs):
+        # Do something before
+        mutex_send_classical_message.acquire()
+
+        value = func(*args, **kwargs)
+
+        # Do something after
+        mutex_send_classical_message.release()
+
+        return value
+    return wrapper_decorator
+
+
+def receive_message_wrapper(func):
+    @wraps(func)
+    def wrapper_decorator(*args, **kwargs):
+        # Do something before
+        # mutex_receive_classical_message.acquire()
+
+        try:
+            value = func(*args, **kwargs)
+        except:
+            value = func(*args, **kwargs)
+
+        # Do something after
+        # mutex_receive_classical_message.release()
+
+        return value
+    return wrapper_decorator
 
 
 class Node:
@@ -51,6 +90,8 @@ class Node:
 
         key_message_length = default_key_message_length
         sifting_iterations_limit = int(key_length_required / key_message_length / g_q * 3 + 3)
+
+        # assert self.receive_classical_string() == f"{receiver} start".encode()
 
         # Initialize the connection
         with CQCConnection(self.name) as Me:
@@ -142,7 +183,7 @@ class Node:
                 print("Iterations limit expired!")
 
             # ================= Sifted key report =================
-            if logging_level >= 1:
+            if logging_level >= 2:
                 print(f"{self.name}'s sifted key to {receiver}: {correct_key}\n"
                       f"Empirical protocol gain is {round(g_p, 2)} with delta {delta}\n")
 
@@ -150,7 +191,7 @@ class Node:
         self.correct_key_errors_as_transmitter(receiver, correct_key, qber)
 
         # ================= Correct key report =================
-        if logging_level >= 1:
+        if logging_level >= 2:
             print(f"{self.name}'s correct key to {receiver}: {correct_key}\n"
                   f"Empirical protocol gain is {round(g_p, 2)} with delta {delta}\n")
 
@@ -188,6 +229,8 @@ class Node:
 
         key_message_length = default_key_message_length
         sifting_iterations_limit = int(key_length_required / key_message_length / g_q * 3 + 3)
+
+        # self.send_classical_string(transmitter, f"{self.name} start".encode())
 
         with CQCConnection(self.name) as Me:
 
@@ -264,7 +307,7 @@ class Node:
                 print("Iterations limit expired!")
 
             # ================= Sifted key report =================
-            if logging_level >= 1:
+            if logging_level >= 2:
                 print(f"{self.name}'s sifted key to {transmitter}: {sifted_key}")
 
         # ================= Receiver's key adjustment =================
@@ -289,9 +332,11 @@ class Node:
         if qber == 0:
             return
 
+        mutex_cascade.acquire()
         corrected_key = run_cascade(lambda k_p: self.ask_block_parity(transmitter, k_p),
                                     initial_key,
                                     qber)
+        mutex_cascade.release()
 
         self.send_classical_int_list(transmitter, [])
 
@@ -331,6 +376,7 @@ class Node:
 
     # ================ classic messages exchange ================
 
+    @send_message_wrapper
     def send_classical_bit_string(self, receiver: str, msg: str, key: str = ''):
         """
         Function for sending compact bit-strings.
@@ -364,6 +410,7 @@ class Node:
                     "empty_string".encode("utf-8")
                 )
 
+    @receive_message_wrapper
     def receive_classical_bit_string(self, msg_len: int = None, key: str = ''):
         """
         Function for receiving compact bit-strings.
@@ -391,7 +438,8 @@ class Node:
                 msg = xor_bit_strings(msg, key)
             return msg
 
-    def send_classical_byte_string(self, receiver: str, msg: bytes, key: str = ''):
+    @send_message_wrapper
+    def send_classical_string(self, receiver: str, msg: bytes, key: str = ''):
         if key != '':
             encoded_message = []
             for i in range(len(msg)):
@@ -401,7 +449,8 @@ class Node:
         with CQCConnection(self.name) as Me:
             Me.sendClassical(receiver, encoded_message)
 
-    def receive_classical_byte_string(self, key: str = ''):
+    @receive_message_wrapper
+    def receive_classical_string(self, key: str = ''):
         with CQCConnection(self.name) as Me:
             msg = Me.recvClassical()
             if key != '':
@@ -412,6 +461,7 @@ class Node:
                 decoded_message = msg
             return decoded_message
 
+    @send_message_wrapper
     def send_classical_int_list(self, receiver: str, msg: list):
         """
         This function was made to avoid error when sending empty lists
@@ -437,9 +487,13 @@ class Node:
         msg = msg.astype(int)  # if msg is empty, previous step results in array([0.0])
         msg = msg.tolist()
 
+        # If the message does not start with 0, it must contain odd num of bytes
+        assert not (msg[0] != 0 and len(msg) % 2 == 0)
+
         with CQCConnection(self.name) as Me:
             Me.sendClassical(receiver, msg)
 
+    @receive_message_wrapper
     def receive_classical_int_list(self, list_max_length: int):
         """
         This function was made to avoid error when receiving empty lists
@@ -454,14 +508,16 @@ class Node:
         message_max_length = 1 + list_max_length * 2
         with CQCConnection(self.name) as Me:
             msg = list(Me.recvClassical(msg_size=message_max_length))
+            # If the message does not start with 0, it must contain odd num of bytes
+            assert not (msg[0] != 0 and len(msg) % 2 == 0)
             # The first info byte denotes if we need factors of 256
             # It also has a potential to signal whether we need to use sign, etc.
-            is_factors_list_needed = bool(msg[0])
+            is_factors_list_needed = msg[0]
             # We don't need it after the information is extracted
             msg = msg[1:]
 
         # Getting initial numbers
-        if is_factors_list_needed:
+        if bool(is_factors_list_needed):
             msg = np.array(msg)
 
             msg_len_2 = len(msg) // 2

@@ -15,7 +15,7 @@ def main():
     # print(f"Charlie's quantum protected key: {quantum_protected_key}")
 
     charlie.transmit_key('Bob', key_length_required=key_length)
-    charlie.send_classical_byte_string('Bob', encoded_message, charlie.keys['Bob'])
+    charlie.send_classical_string('Bob', encoded_message, charlie.keys['Bob'])
 
 
 if __name__ == '__main__':

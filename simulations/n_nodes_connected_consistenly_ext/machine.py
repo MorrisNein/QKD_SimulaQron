@@ -27,9 +27,10 @@ class Machine(Node):
             print(f'{self.name}: key received')
         elif command[1] == 'shutdown':
             print(f'{self.name}: shutting down')
+            print(f'{self.name}\'s keys: {self.keys}')
             exit()
 
-        self.send_classical_byte_string('Manager', f'{self.name} free'.encode('utf-8'))
+        self.send_classical_string('Manager', f'{self.name} free'.encode('utf-8'))
 
     def command_transmit_key(self, receiver):
         self.transmit_key(receiver)

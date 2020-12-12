@@ -13,7 +13,7 @@ def main():
     # alice.send_classical_int('Bob', msg=key_length_required)
     alice.transmit_key('Charlie', key_length_required=key_length_required, logging_level=1)
 
-    alice.send_classical_byte_string('Charlie', byte_message, alice.keys['Charlie'])
+    alice.send_classical_string('Charlie', byte_message, alice.keys['Charlie'])
 
 
 if __name__ == '__main__':
