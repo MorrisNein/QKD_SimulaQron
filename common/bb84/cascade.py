@@ -21,7 +21,7 @@ def run_cascade(ask_block_parity_function, initial_key_string, qber):
 class KeyBlockStorage:
     def __init__(self, initial_key):
         if not isinstance(initial_key, pd.Series):
-            initial_key = pd.Series(list(initial_key), dtype=int)
+            initial_key = pd.Series([int(i) for i in initial_key], dtype=int)
 
         self.key = initial_key
         self.block_positions_dict = {}
