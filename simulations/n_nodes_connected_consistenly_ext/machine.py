@@ -8,9 +8,9 @@ class Machine(Node):
 
     def wait_for_a_command(self):
         while True:
-            print('waiting for a command')
-            command = self.receive_classical_byte_string()
-            print('got a command', command)
+            print(f'{self.name}: waiting for a command')
+            command = self.receive_classical_string()
+            print(f'{self.name}: got a command', command)
             decoded_command = command.decode().split(' ')
             if decoded_command[0] == 'command':
                 self.handle_command(decoded_command)
@@ -18,13 +18,17 @@ class Machine(Node):
 
     def handle_command(self, command):
         if command[1] == 'transmit_key':
-            print('transmitting key')
+            print(f'{self.name} transmitting key')
             self.command_transmit_key(command[2])
-            print('key transmitted')
+            print(f'{self.name}: key transmitted')
         elif command[1] == 'receive_key':
-            print('receiving key')
+            print(f'{self.name}: receiving key')
             self.command_receive_key(command[2])
-            print('key received')
+            print(f'{self.name}: key received')
+        elif command[1] == 'shutdown':
+            print(f'{self.name}: shutting down')
+            exit()
+
         self.send_classical_byte_string('Manager', f'{self.name} free'.encode('utf-8'))
 
     def command_transmit_key(self, receiver):
