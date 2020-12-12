@@ -235,7 +235,7 @@ class Node(object):
                 # Send the node's positions of changed basis
                 self.send_classical_bit_string(transmitter, bases_str)  # CQC3
                 # Get other node's positions of changed basis
-                bases_str_o = self.receive_classical_bit_string(len(received_key_positions)) # CQC4
+                bases_str_o = self.receive_classical_bit_string(len(received_key_positions))  # CQC4
 
                 # ================= Logging =================
                 if logging_level >= 2:

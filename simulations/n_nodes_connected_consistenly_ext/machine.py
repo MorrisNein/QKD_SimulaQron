@@ -13,8 +13,22 @@ class Machine(Node):
             print('got a command', command)
             decoded_command = command.decode().split(' ')
             if decoded_command[0] == 'command':
-                if decoded_command[1] == 'transmit_key':
-                    self.transmit_key(decoded_command[2])
-                elif decoded_command[1] == 'receive_key':
-                    self.receive_key(decoded_command[2])
-            sleep(1)
+                self.handle_command(decoded_command)
+            sleep(0.5)
+
+    def handle_command(self, command):
+        if command[1] == 'transmit_key':
+            print('trasmitting key')
+            self.command_transmit_key(command[2])
+            print('key transmitted')
+        elif command[1] == 'receive_key':
+            print('receiving key')
+            self.command_receive_key(command[2])
+            print('key received')
+        self.send_classical_byte_string('Manager', f'{self.name} free'.encode('utf-8'))
+
+    def command_transmit_key(self, receiver):
+        self.transmit_key(receiver)
+
+    def command_receive_key(self, transmitter):
+        self.receive_key(transmitter)
