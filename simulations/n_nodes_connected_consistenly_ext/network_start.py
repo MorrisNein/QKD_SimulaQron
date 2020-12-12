@@ -3,8 +3,8 @@ from simulaqron.network import Network
 
 def main():
     # Setup the network
-    nodes = ["Alice", "Bob", "Manager"]
-    topology = {"Alice": ["Bob"], "Bob": ["Alice"], "Manager": []}
+    nodes = ["1", "2", "3", "4", "Manager"]
+    topology = {"1": ["2"], "2": ["1", "3"], "3": ["2", "4"], "4": ["3"], "Manager": []}
 
     network = Network(name="default",
                       nodes=nodes,
