@@ -18,7 +18,7 @@ class Machine(Node):
 
     def handle_command(self, command):
         if command[1] == 'transmit_key':
-            print('trasmitting key')
+            print('transmitting key')
             self.command_transmit_key(command[2])
             print('key transmitted')
         elif command[1] == 'receive_key':

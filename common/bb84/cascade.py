@@ -236,25 +236,9 @@ def get_bit_string(key_block):
     return "".join([str(i) for i in key_block])
 
 
-if __name__ == '__main__':
-
-    # key_len = 300
-    # qber = 0.01
-    #
-    # key_correct = pd.Series([random.randint(0, 1) for i in range(key_len)])
-    # key = pd.Series([int((random.random() < qber) ^ bool(k)) for k in key_correct])
-    # blocks = KeyBlockStorage(key)
-    # print(f"Correct key: {get_bit_string(key_correct)}")
-    # print(f"Initial key: {get_bit_string(key)}")
-    # print(f"It is correct? {(key == key_correct).all()}")
-    #
-    # cascade(4, blocks)
-    #
-    # print(f"Correct key: {get_bit_string(key_correct)}")
-    # print(f"Final key: {get_bit_string(key)}.")
-    # print(f"It is correct? {(key == key_correct).all()}")
-
+def main():
     import time
+    global key_correct
 
     start = time.time()
 
@@ -266,7 +250,7 @@ if __name__ == '__main__':
     n_monte_karlo = 100
 
     for _ in range(n_monte_karlo):
-        key_correct = pd.Series([random.randint(0, 1) for i in range(key_len)])
+        key_correct = pd.Series([random.randint(0, 1) for _ in range(key_len)])
 
         key = pd.Series([int((random.random() < qber) ^ bool(k)) for k in key_correct])
         blocks = KeyBlockStorage(key)
@@ -279,5 +263,11 @@ if __name__ == '__main__':
     end = time.time()
     print(f"Time elapsed: {end - start}")
 
-    print(f"Fully successful fraction {np.round(np.mean(res), 4) * 100}% "
-          f"amongst {n_monte_karlo} random keys of length {key_len} with QBER {qber * 100}%")
+    print(f"Fully successful fraction"
+          f" amongst {n_monte_karlo} random keys of length {key_len} with QBER {qber * 100}%"
+          f" is {np.round(np.mean(res), 4) * 100}%")
+
+
+if __name__ == '__main__':
+    global key_correct
+    main()

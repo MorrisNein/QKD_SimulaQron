@@ -3,7 +3,6 @@ from time import sleep
 from common.bb84.node import Node
 from simulations.n_nodes_connected_consistenly_ext.machine import Machine
 
-
 node_availability = {}
 node_manager = Node('Manager')
 
@@ -14,8 +13,8 @@ def main():
     node_threads = []
     nodes = []
     for i in range(4):
-        nodes.append(Machine(str(i+1)))
-    #nodes = [Machine("Alice"), Machine("Bob")]
+        nodes.append(Machine(str(i + 1)))
+    # nodes = [Machine("Alice"), Machine("Bob")]
     for i in range(len(nodes)):
         node_threads.append(threading.Thread(target=nodes[i].wait_for_a_command))
         node_threads[i].start()
@@ -23,10 +22,11 @@ def main():
         node_availability[nodes[i].name] = 1
     threading.Thread(target=transmit_key_command, kwargs={'nodes': nodes}).start()
     threading.Thread(target=get_availability_response).start()
-'''    node_manager.send_classical_byte_string('Alice', 'command transmit_key Bob'.encode('utf-8'))
-    print('first command sent')
-    node_manager.send_classical_byte_string('Bob', 'command receive_key Alice'.encode('utf-8'))
-    print('second command sent')'''
+
+    # node_manager.send_classical_byte_string('Alice', 'command transmit_key Bob'.encode('utf-8'))
+    # print('first command sent')
+    # node_manager.send_classical_byte_string('Bob', 'command receive_key Alice'.encode('utf-8'))
+    # print('second command sent')
 
 
 def transmit_key_command(nodes):
@@ -37,16 +37,16 @@ def transmit_key_command(nodes):
         node_availability[nodes[i].name] = 0
     for i in range(0, distance):
         if i % 2 == 0:
-            node_manager.send_classical_byte_string(nodes[i].name, f'command transmit_key {nodes[i+1].name}'.encode())
+            node_manager.send_classical_byte_string(nodes[i].name, f'command transmit_key {nodes[i + 1].name}'.encode())
             print('com sent')
         else:
-            node_manager.send_classical_byte_string(nodes[i].name, f'command receive_key {nodes[i-1].name}'.encode())
+            node_manager.send_classical_byte_string(nodes[i].name, f'command receive_key {nodes[i - 1].name}'.encode())
             print('com sent')
-    for i in range(1, distance-1):
+    for i in range(1, distance - 1):
         if i % 2 == 1:
-            commands_to_be_sent.append(f'{nodes[i].name} command transmit_key {nodes[i+1].name}')
+            commands_to_be_sent.append(f'{nodes[i].name} command transmit_key {nodes[i + 1].name}')
         else:
-            commands_to_be_sent.append(f'{nodes[i].name} command receive_key {nodes[i-1].name}')
+            commands_to_be_sent.append(f'{nodes[i].name} command receive_key {nodes[i - 1].name}')
     while len(commands_to_be_sent) != 0:
         for i in range(len(commands_to_be_sent)):
             command = commands_to_be_sent[i].split()
