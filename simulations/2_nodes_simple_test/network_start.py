@@ -1,10 +1,12 @@
 from simulaqron.network import Network
+import networkx as nx
 
 
 def main():
     # Setup the network
     nodes = ["Alice", "Bob"]
-    topology = {"Alice": ["Bob"], "Bob": ["Alice"]}
+    g = nx.path_graph(nodes)
+    topology = {n: list(g.neighbors(n)) for n in nodes}
 
     network = Network(name="default",
                       nodes=nodes,

@@ -7,15 +7,13 @@ def main():
     from common.bb84.node import Node
     alice = Node('Alice')
 
-    # print(alice.receive_classical_bit_string(3))
-
     t1 = t.time()
     alice.transmit_key('Bob', logging_level=0)
     t2 = t.time()
 
     bob_key = alice.receive_classical_bit_string()
     print('Is Bob\'s key the same as Alice\'s?')
-    print(bob_key == alice.keys['Bob'])
+    print((bob_key == alice.keys['Bob']))
     print(f'QKD run {round(t2-t1, 2)} s')
 
 
