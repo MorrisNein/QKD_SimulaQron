@@ -6,15 +6,18 @@ from cqc.pythonLib import CQCConnection, qubit, CQCNoQubitError
 from common.bb84.service import *
 from common.bb84.cascade import run_cascade, calculate_block_parity
 
-ask_parity_msg_num = 0
-answ_parity_msg_num = 0
+ask_parity_msg_count = 0
+reveal_parity_msg_count = 0
 
 
-class Node(object):
+class Node:
 
     def __init__(self, name):
         self.name = name
         self.keys = {}
+
+    def __del__(self):
+        print(f"{self.name} node closed.")
 
     # ================ QKD ================
 
@@ -235,7 +238,7 @@ class Node(object):
                 # Send the node's positions of changed basis
                 self.send_classical_bit_string(transmitter, bases_str)  # CQC3
                 # Get other node's positions of changed basis
-                bases_str_o = self.receive_classical_bit_string(len(received_key_positions)) # CQC4
+                bases_str_o = self.receive_classical_bit_string(len(received_key_positions))  # CQC4
 
                 # ================= Logging =================
                 if logging_level >= 2:
@@ -294,6 +297,13 @@ class Node(object):
 
         return corrected_key
 
+    def ask_block_parity(self, node_partner_name, key_block_positions):
+        global ask_parity_msg_count
+        ask_parity_msg_count += 1
+        # print(f"{self.name} asks parity_msg_num {ask_parity_msg_num}")
+        self.send_classical_int_list(node_partner_name, key_block_positions)
+        return self.receive_classical_int_list(1)[0]
+
     def correct_key_errors_as_transmitter(self, node_partner_name, correct_key, qber):
         t1 = time.time()
 
@@ -301,27 +311,20 @@ class Node(object):
             return
         keep_answering = True
         while keep_answering:
-            keep_answering = self.answer_block_parity(node_partner_name, correct_key)
+            keep_answering = self.reveal_block_parity(node_partner_name, correct_key)
         t2 = time.time()
         print(f"CASCADE run {round(t2 - t1, 2)} s")
 
-    def ask_block_parity(self, node_partner_name, key_block_positions):
-        global ask_parity_msg_num
-        ask_parity_msg_num += 1
-        # print(f"{self.name} asks parity_msg_num {ask_parity_msg_num}")
-        self.send_classical_int_list(node_partner_name, key_block_positions)
-        return self.receive_classical_int_list(1)[0]
-
-    def answer_block_parity(self, node_partner_name, correct_key):
-        global answ_parity_msg_num
-        answ_parity_msg_num += 1
+    def reveal_block_parity(self, node_partner_name, correct_key):
+        global reveal_parity_msg_count
+        reveal_parity_msg_count += 1
         msg = self.receive_classical_int_list(list_max_length=len(correct_key))
         if not msg:
             return False
 
         key_block_positions = msg
         parity = calculate_block_parity(correct_key, key_block_positions)
-        # print(f"{self.name} answers parity_msg_num {answ_parity_msg_num}")
+        # print(f"{self.name} answers parity_msg_num {reveal_parity_msg_num}")
         self.send_classical_int_list(node_partner_name, [parity])
 
         return True

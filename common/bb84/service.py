@@ -4,7 +4,7 @@ if __name__ != "__main__":
     # Default bit length of portions of key generation. Currently must be no more than 2**16.
     default_key_message_length = 1024
     # Default quantum channel gain
-    default_g_q = 0.01
+    default_g_q = 0.25
     # Default delta. The probability of changing basis of transmission.
     # Defines protocol gain g_p as follows: g_p = delta**2 - 2*delta + 1
     default_delta = 0.5
