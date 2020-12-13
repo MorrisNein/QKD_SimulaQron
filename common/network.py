@@ -4,8 +4,6 @@ from simulaqron.network import Network
 
 def setup_network(n_nodes, topology_type, is_manager_needed=True, keyboard_interrupt=True):
     # Setup the network
-    global network
-
     G = nx.Graph()
 
     nodes_QKD_num = n_nodes

@@ -1,52 +1,17 @@
 import time
 import random
-import threading
-from functools import wraps
 import numpy as np
 from textwrap import dedent
 from cqc.pythonLib import CQCConnection, qubit, CQCNoQubitError
 from common.bb84.service import *
 from common.bb84.cascade import run_cascade, calculate_block_parity
 
-mutex_cascade = threading.Lock()
-mutex_send_classical_message = threading.Lock()
-mutex_receive_classical_message = threading.Lock()
+# mutex_cascade = threading.Lock()
+# mutex_send_classical_message = threading.Lock()
+# mutex_receive_classical_message = threading.Lock()
 
 ask_parity_msg_count = 0
 reveal_parity_msg_count = 0
-
-
-def send_message_wrapper(func):
-    @wraps(func)
-    def wrapper_decorator(*args, **kwargs):
-        # Do something before
-        mutex_send_classical_message.acquire()
-
-        value = func(*args, **kwargs)
-
-        # Do something after
-        mutex_send_classical_message.release()
-
-        return value
-    return wrapper_decorator
-
-
-def receive_message_wrapper(func):
-    @wraps(func)
-    def wrapper_decorator(*args, **kwargs):
-        # Do something before
-        # mutex_receive_classical_message.acquire()
-
-        try:
-            value = func(*args, **kwargs)
-        except:
-            value = func(*args, **kwargs)
-
-        # Do something after
-        # mutex_receive_classical_message.release()
-
-        return value
-    return wrapper_decorator
 
 
 class Node:
@@ -56,7 +21,7 @@ class Node:
         self.keys = {}
 
     def __del__(self):
-        print(f"{self.name} node closed.")
+        print(f"{self.name} node is closing.")
 
     # ================ QKD ================
 
@@ -191,7 +156,7 @@ class Node:
         self.correct_key_errors_as_transmitter(receiver, correct_key, qber)
 
         # ================= Correct key report =================
-        if logging_level >= 2:
+        if logging_level >= 1:
             print(f"{self.name}'s correct key to {receiver}: {correct_key}\n"
                   f"Empirical protocol gain is {round(g_p, 2)} with delta {delta}\n")
 
@@ -332,11 +297,11 @@ class Node:
         if qber == 0:
             return
 
-        mutex_cascade.acquire()
+        # mutex_cascade.acquire()
         corrected_key = run_cascade(lambda k_p: self.ask_block_parity(transmitter, k_p),
                                     initial_key,
                                     qber)
-        mutex_cascade.release()
+        # mutex_cascade.release()
 
         self.send_classical_int_list(transmitter, [])
 
@@ -376,7 +341,7 @@ class Node:
 
     # ================ classic messages exchange ================
 
-    @send_message_wrapper
+    # @send_message_wrapper
     def send_classical_bit_string(self, receiver: str, msg: str, key: str = ''):
         """
         Function for sending compact bit-strings.
@@ -410,7 +375,7 @@ class Node:
                     "empty_string".encode("utf-8")
                 )
 
-    @receive_message_wrapper
+    # @receive_message_wrapper
     def receive_classical_bit_string(self, msg_len: int = None, key: str = ''):
         """
         Function for receiving compact bit-strings.
@@ -438,7 +403,7 @@ class Node:
                 msg = xor_bit_strings(msg, key)
             return msg
 
-    @send_message_wrapper
+    # @send_message_wrapper
     def send_classical_string(self, receiver: str, msg: bytes, key: str = ''):
         if key != '':
             encoded_message = []
@@ -449,7 +414,7 @@ class Node:
         with CQCConnection(self.name) as Me:
             Me.sendClassical(receiver, encoded_message)
 
-    @receive_message_wrapper
+    # @receive_message_wrapper
     def receive_classical_string(self, key: str = ''):
         with CQCConnection(self.name) as Me:
             msg = Me.recvClassical()
@@ -461,7 +426,7 @@ class Node:
                 decoded_message = msg
             return decoded_message
 
-    @send_message_wrapper
+    # @send_message_wrapper
     def send_classical_int_list(self, receiver: str, msg: list):
         """
         This function was made to avoid error when sending empty lists
@@ -493,7 +458,7 @@ class Node:
         with CQCConnection(self.name) as Me:
             Me.sendClassical(receiver, msg)
 
-    @receive_message_wrapper
+    # @receive_message_wrapper
     def receive_classical_int_list(self, list_max_length: int):
         """
         This function was made to avoid error when receiving empty lists

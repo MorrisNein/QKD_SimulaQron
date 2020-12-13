@@ -225,7 +225,6 @@ def calculate_block_parity(key_block, key_block_positions=None):
 
 
 def ask_block_parity(key_block_positions):
-    # TODO: ask for parity from transmitter node
     if callable(ask_block_parity_external):
         return ask_block_parity_external(key_block_positions)
     else:
