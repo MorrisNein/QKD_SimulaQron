@@ -23,6 +23,8 @@ def run_cascade(ask_block_parity_function, initial_key_string, qber):
 class KeyBlockStorage:
     """The objects of the class store key"""
 
+    correct_parities_dict = {}
+
     def __init__(self, initial_key):
         if not isinstance(initial_key, pd.Series):
             initial_key = pd.Series([int(i) for i in initial_key], dtype=int)
@@ -31,6 +33,10 @@ class KeyBlockStorage:
         self.block_positions_by_iterations_dict = {}
         # TODO: optimal parities storage
         # self.correct_block_parities_dict = {}
+
+    @classmethod
+    def __del__(cls):
+        cls.correct_parities_dict = {}
 
     def invert_bit(self, position):
 
@@ -204,10 +210,16 @@ def calculate_block_parity(key_block, key_block_positions=None):
 
 
 def ask_block_parity(key_block_positions):
-    if callable(ask_block_parity_external):
-        return ask_block_parity_external(key_block_positions)
+    positions_fset = frozenset(key_block_positions)
+    if positions_fset in KeyBlockStorage.correct_parities_dict:
+        parity = KeyBlockStorage.correct_parities_dict[positions_fset]
     else:
-        return calculate_block_parity(key_correct[key_block_positions])
+        if callable(ask_block_parity_external):
+            parity = ask_block_parity_external(key_block_positions)
+        else:
+            parity = calculate_block_parity(key_correct[key_block_positions])
+        KeyBlockStorage.correct_parities_dict[positions_fset] = parity
+    return parity
 
 
 def get_bit_string(key_block):
@@ -225,7 +237,7 @@ def main():
 
     res = []
 
-    n_monte_karlo = 100
+    n_monte_karlo = 2
 
     for _ in range(n_monte_karlo):
         key_correct = pd.Series([random.randint(0, 1) for _ in range(key_len)])
