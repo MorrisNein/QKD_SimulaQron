@@ -1,4 +1,4 @@
-from common.network import setup_network
+from networking.network import setup_network
 
 
 def main():

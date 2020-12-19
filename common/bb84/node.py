@@ -3,6 +3,7 @@ import random
 import numpy as np
 from textwrap import dedent
 from cqc.pythonLib import CQCConnection, qubit, CQCNoQubitError
+
 from common.bb84.service import *
 from common.bb84.cascade import run_cascade, calculate_block_parity
 
