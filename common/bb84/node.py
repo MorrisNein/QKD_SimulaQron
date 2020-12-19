@@ -357,17 +357,16 @@ class Node:
             # Converting the string to natural number of bytes
             msg = '0'*((8 - (msg_len % 8)) % 8) + msg
 
-        with CQCConnection(self.name) as Me:
-            if msg_len != 0:
-                Me.sendClassical(
-                    receiver,
-                    encode_bit_string_to_bytes_msg(msg)
-                )
-            else:
-                Me.sendClassical(
-                    receiver,
-                    "empty_string".encode("utf-8")
-                )
+        if msg_len != 0:
+            self.send_msg_my(
+                receiver,
+                encode_bit_string_to_bytes_msg(msg)
+            )
+        else:
+            self.send_msg_my(
+                receiver,
+                "empty_string".encode("utf-8")
+            )
 
     def receive_classical_bit_string(self, msg_len: int = None, key: str = ''):
         """
@@ -379,22 +378,21 @@ class Node:
             Bit-string key for encoding via XOR. Must be equal to len(msg)
         :return:
         """
-        with CQCConnection(self.name) as Me:
-            msg = Me.recvClassical()
-            msg_bytes = len(msg)
+        msg = self.recv_msg_my()
+        msg_bytes = len(msg)
 
-            if msg == "empty_string".encode("utf-8"):
-                return ""
+        if msg == "empty_string".encode("utf-8"):
+            return ""
 
-            if msg_len is None:
-                msg_len = msg_bytes * 8
+        if msg_len is None:
+            msg_len = msg_bytes * 8
 
-            msg = decode_bytes_msg_to_bit_string(msg, msg_len)
+        msg = decode_bytes_msg_to_bit_string(msg, msg_len)
 
-            if key != '':
-                assert len(key) == len(msg)
-                msg = xor_bit_strings(msg, key)
-            return msg
+        if key != '':
+            assert len(key) == len(msg)
+            msg = xor_bit_strings(msg, key)
+        return msg
 
     def send_classical_string(self, receiver: str, msg: bytes, key: str = ''):
         if key != '':
@@ -403,19 +401,18 @@ class Node:
                 encoded_message.append(msg[i] ^ int(key[8 * i:8 * (i + 1)], 2))
         else:
             encoded_message = msg
-        with CQCConnection(self.name) as Me:
-            Me.sendClassical(receiver, encoded_message)
+
+        self.send_msg_my(receiver, encoded_message)
 
     def receive_classical_string(self, key: str = ''):
-        with CQCConnection(self.name) as Me:
-            msg = Me.recvClassical()
-            if key != '':
-                decoded_message = []
-                for i in range(len(msg)):
-                    decoded_message.append(msg[i] ^ int(key[8 * i:8 * (i + 1)], 2))
-            else:
-                decoded_message = msg
-            return decoded_message
+        msg = self.recv_msg_my()
+        if key != '':
+            decoded_message = []
+            for i in range(len(msg)):
+                decoded_message.append(msg[i] ^ int(key[8 * i:8 * (i + 1)], 2))
+        else:
+            decoded_message = msg
+        return decoded_message
 
     def send_classical_int_list(self, receiver: str, msg: list):
         """
@@ -445,8 +442,7 @@ class Node:
         # If the message does not start with 0, it must contain odd num of bytes
         assert not (msg[0] != 0 and len(msg) % 2 == 0)
 
-        with CQCConnection(self.name) as Me:
-            Me.sendClassical(receiver, msg)
+        self.send_msg_my(receiver, msg)
 
     def receive_classical_int_list(self, list_max_length: int):
         """
@@ -460,15 +456,15 @@ class Node:
         # list of factors of 256 of length l
         # list of remainders of length l
         message_max_length = 1 + list_max_length * 2
-        with CQCConnection(self.name) as Me:
-            msg = list(Me.recvClassical(msg_size=message_max_length))
-            # If the message does not start with 0, it must contain odd num of bytes
-            assert not (msg[0] != 0 and len(msg) % 2 == 0)
-            # The first info byte denotes if we need factors of 256
-            # It also has a potential to signal whether we need to use sign, etc.
-            is_factors_list_needed = msg[0]
-            # We don't need it after the information is extracted
-            msg = msg[1:]
+
+        msg = list(self.recv_msg_my(msg_size=message_max_length))
+        # If the message does not start with 0, it must contain odd num of bytes
+        assert not (msg[0] != 0 and len(msg) % 2 == 0)
+        # The first info byte denotes if we need factors of 256
+        # It also has a potential to signal whether we need to use sign, etc.
+        is_factors_list_needed = msg[0]
+        # We don't need it after the information is extracted
+        msg = msg[1:]
 
         # Getting initial numbers
         if bool(is_factors_list_needed):
@@ -483,3 +479,12 @@ class Node:
             msg = msg.tolist()
 
         return msg
+
+    def send_msg_my(self, *args, **kwargs):
+        with CQCConnection(self.name) as Me:
+            Me.sendClassical(*args, **kwargs)
+
+    def recv_msg_my(self, *args, **kwargs):
+        with CQCConnection(self.name) as Me:
+            return Me.recvClassical(*args, **kwargs)
+
