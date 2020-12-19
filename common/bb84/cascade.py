@@ -34,6 +34,10 @@ class KeyBlockStorage:
         # TODO: optimal parities storage
         # self.correct_block_parities_dict = {}
 
+    @classmethod
+    def __del__(cls):
+        cls.correct_parities_dict = {}
+
     def invert_bit(self, position):
 
         # inverting bit
@@ -233,7 +237,7 @@ def main():
 
     res = []
 
-    n_monte_karlo = 100
+    n_monte_karlo = 2
 
     for _ in range(n_monte_karlo):
         key_correct = pd.Series([random.randint(0, 1) for _ in range(key_len)])
