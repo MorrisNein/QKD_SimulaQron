@@ -1,12 +1,12 @@
 from multiprocessing import Process, Manager
 
-from time import sleep, time
+from time import time
 from common.network import setup_network
 from simulations.n_nodes_connected_consistenly_ext.machine import Machine, MachineManager
 
 
 def main():
-    n_nodes = 10
+    n_nodes = 11
     topology_type = "path"
     network = setup_network(n_nodes, topology_type, keyboard_interrupt=False)
     t1 = time()

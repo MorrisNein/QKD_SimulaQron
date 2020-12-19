@@ -85,8 +85,8 @@ class MachineManager(Node):
 
         while commands_to_send:
 
-            # IF (there's any node that is in commands_to_send and is available):
-            #   send the command simultaneously
+            # IF (there's any node that is in commands_to_send AND the node is available):
+            #   send the command immediately
             # ELSE
             #   wait for response
             for node in commands_to_send:

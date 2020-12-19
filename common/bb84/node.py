@@ -6,10 +6,6 @@ from cqc.pythonLib import CQCConnection, qubit, CQCNoQubitError
 from common.bb84.service import *
 from common.bb84.cascade import run_cascade, calculate_block_parity
 
-# mutex_cascade = threading.Lock()
-# mutex_send_classical_message = threading.Lock()
-# mutex_receive_classical_message = threading.Lock()
-
 ask_parity_msg_count = 0
 reveal_parity_msg_count = 0
 
@@ -297,11 +293,9 @@ class Node:
         if qber == 0:
             return
 
-        # mutex_cascade.acquire()
         corrected_key = run_cascade(lambda k_p: self.ask_block_parity(transmitter, k_p),
                                     initial_key,
                                     qber)
-        # mutex_cascade.release()
 
         self.send_classical_int_list(transmitter, [])
 
@@ -341,7 +335,6 @@ class Node:
 
     # ================ classic messages exchange ================
 
-    # @send_message_wrapper
     def send_classical_bit_string(self, receiver: str, msg: str, key: str = ''):
         """
         Function for sending compact bit-strings.
@@ -375,7 +368,6 @@ class Node:
                     "empty_string".encode("utf-8")
                 )
 
-    # @receive_message_wrapper
     def receive_classical_bit_string(self, msg_len: int = None, key: str = ''):
         """
         Function for receiving compact bit-strings.
@@ -403,7 +395,6 @@ class Node:
                 msg = xor_bit_strings(msg, key)
             return msg
 
-    # @send_message_wrapper
     def send_classical_string(self, receiver: str, msg: bytes, key: str = ''):
         if key != '':
             encoded_message = []
@@ -414,7 +405,6 @@ class Node:
         with CQCConnection(self.name) as Me:
             Me.sendClassical(receiver, encoded_message)
 
-    # @receive_message_wrapper
     def receive_classical_string(self, key: str = ''):
         with CQCConnection(self.name) as Me:
             msg = Me.recvClassical()
@@ -426,7 +416,6 @@ class Node:
                 decoded_message = msg
             return decoded_message
 
-    # @send_message_wrapper
     def send_classical_int_list(self, receiver: str, msg: list):
         """
         This function was made to avoid error when sending empty lists
@@ -450,7 +439,7 @@ class Node:
         # The first byte of the message is 'info' byte
         msg = np.append(int(is_factors_list_needed), msg)
         msg = msg.astype(int)  # if msg is empty, previous step results in array([0.0])
-        msg = msg.tolist()
+        msg = list(msg)
 
         # If the message does not start with 0, it must contain odd num of bytes
         assert not (msg[0] != 0 and len(msg) % 2 == 0)
@@ -458,7 +447,6 @@ class Node:
         with CQCConnection(self.name) as Me:
             Me.sendClassical(receiver, msg)
 
-    # @receive_message_wrapper
     def receive_classical_int_list(self, list_max_length: int):
         """
         This function was made to avoid error when receiving empty lists
