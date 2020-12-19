@@ -232,12 +232,12 @@ def main():
 
     start = time.time()
 
-    key_len = 128
+    key_len = 1024
     qber = 0.15
 
     res = []
 
-    n_monte_karlo = 2
+    n_monte_karlo = 100
 
     for _ in range(n_monte_karlo):
         key_correct = pd.Series([random.randint(0, 1) for _ in range(key_len)])

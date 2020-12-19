@@ -104,21 +104,6 @@ class MachineManager(Node):
 
         return command
 
-    # @staticmethod
-    # def decode_command(command_cipher, partner='', executor=''):
-    #     command = {}
-    #
-    #     if command_cipher:
-    #         command['command'] = command_cipher
-    #
-    #     if partner:
-    #         command['partner'] = partner
-    #
-    #     if executor:
-    #         command['executor'] = executor
-    #
-    #     return str(command)
-
     def send_commands(self, commands_to_send):
 
         while commands_to_send:

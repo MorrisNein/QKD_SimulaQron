@@ -4,7 +4,7 @@ from common.networking.machine import run_nodes_path
 
 
 def main():
-    n_nodes = 3
+    n_nodes = 21
     topology_type = "path"
     network = setup_network(n_nodes, topology_type, keyboard_interrupt=False)
     t1 = time()
