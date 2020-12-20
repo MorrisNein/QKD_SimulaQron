@@ -1,15 +1,16 @@
 from time import time
 from common.networking.network import setup_network
-from common.networking.machine import run_nodes_path
+from common.networking.machine import run_nodes_auto
 
 
 def main():
     n_nodes = 5
-    topology_type = "path"
-    network, _ = setup_network(n_nodes, topology_type, keyboard_interrupt=False)
+    topology_type = "star"
+    network, topology_graph = setup_network(n_nodes, topology_type, keyboard_interrupt=False)
+
     t1 = time()
 
-    run_nodes_path(n_nodes)
+    run_nodes_auto(topology_graph)
 
     t2 = time()
     network.stop()

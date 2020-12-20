@@ -9,7 +9,11 @@ def setup_network(n_nodes, topology_type, is_manager_needed=True, keyboard_inter
     nodes_QKD_num = n_nodes
     nodes_QKD = (f"Node{i+1}" for i in range(nodes_QKD_num))
 
-    topologies_available = {"path": nx.path_graph}
+    topologies_available = {
+        "path": nx.path_graph,
+        "star": nx.star_graph,
+        "cycle": nx.cycle_graph,
+    }
 
     if topology_type not in topologies_available:
         raise Exception(f"Inappropriate topology type. Please select one of the followings: {topologies_available}")
@@ -46,4 +50,5 @@ def setup_network(n_nodes, topology_type, is_manager_needed=True, keyboard_inter
         print("Network has stopped!")
         return
 
-    return network
+    G.remove_node("Manager")
+    return network, G

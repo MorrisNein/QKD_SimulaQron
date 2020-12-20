@@ -40,7 +40,7 @@ class Machine(Node):
             print(f"{self.name}: key received")
         elif command_cipher == "shutdown":
             print(f"{self.name}: shutting down")
-            print(f"{self.name}\"s keys: {self.keys}")
+            print(f"{self.name}\'s keys: {self.keys}")
             return False
 
         self.mutex.acquire()
@@ -85,6 +85,47 @@ class MachineManager(Node):
         assert not commands_to_send
         for n in nodes:
             commands_to_send[n.name] = [self.encode_command('shutdown')]
+        self.send_commands(commands_to_send)
+
+    def transmit_key_auto_commands(self, topology_graph):
+        nodes = topology_graph.nodes
+        pairs = set()
+
+        for n in nodes:
+            [pairs.add(frozenset([n, nei])) for nei in list(topology_graph.neighbors(n))]
+
+        commands_to_send = {}
+        step = 0
+
+        pairs = sorted(pairs, key=str)
+        while pairs:
+            step += 1
+            busy = []
+            busy_pairs = []
+            for p in pairs:
+                n_1, n_2 = sorted(p, key=str)
+                if n_1 not in busy and n_2 not in busy:
+                    if n_1 in commands_to_send:
+                        commands_to_send[n_1] += [self.encode_command("transmit_key", n_2)]
+                    else:
+                        commands_to_send[n_1] = [self.encode_command("transmit_key", n_2)]
+
+                    if n_2 in commands_to_send:
+                        commands_to_send[n_2] += [self.encode_command("receive_key", n_1)]
+                    else:
+                        commands_to_send[n_2] = [self.encode_command("receive_key", n_1)]
+
+                    busy += [n_1, n_2]
+                    busy_pairs += [frozenset([n_1, n_2])]
+
+            pairs = sorted(set(pairs).difference(busy_pairs), key=str)
+
+        self.send_commands(commands_to_send)
+
+        # over
+        assert not commands_to_send
+        for n in nodes:
+            commands_to_send[n] = [self.encode_command('shutdown')]
         self.send_commands(commands_to_send)
 
     @staticmethod
@@ -180,6 +221,35 @@ def run_nodes_path(n_nodes):
 
     node_manager = MachineManager(machine_manager_name)
     manager_response_wait_proc = Process(target=node_manager.transmit_key_path_commands, kwargs={'nodes': machines})
+
+    manager_response_wait_proc.start()
+    node_procs += [manager_response_wait_proc]
+
+    for p in node_procs:
+        p.join()
+
+
+def run_nodes_auto(topology_graph):
+
+    machine_manager_name = 'Manager'
+    node_procs = []
+    machines = []
+    processes_manager = Manager()
+    mutex = processes_manager.Lock()
+
+    for node_name in topology_graph.nodes:
+        # Creating machine
+        machine = Machine(node_name, machine_manager_name, mutex)
+        machines.append(machine)
+
+        # Creating and starting process
+        proc = Process(target=machine.wait_for_a_command)
+        proc.start()
+        node_procs.append(proc)
+
+    node_manager = MachineManager(machine_manager_name)
+    manager_response_wait_proc = Process(target=node_manager.transmit_key_auto_commands,
+                                         kwargs={'topology_graph': topology_graph})
 
     manager_response_wait_proc.start()
     node_procs += [manager_response_wait_proc]
