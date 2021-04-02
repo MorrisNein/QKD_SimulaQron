@@ -1,10 +1,10 @@
 from time import time
 from common.networking.network import setup_network
-from common.networking.machine import run_nodes_path
+from common.networking.routing import run_nodes_path
 
 
 def main():
-    n_nodes = 5
+    n_nodes = 2
     topology_type = "path"
     network, _ = setup_network(n_nodes, topology_type, keyboard_interrupt=False)
     t1 = time()

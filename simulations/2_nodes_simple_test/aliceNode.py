@@ -1,5 +1,8 @@
 import sys
+import os
+
 sys.path.append('../../')
+sys.path.append(os.getcwd())
 
 
 def main():
@@ -8,7 +11,7 @@ def main():
     alice = Node('Alice')
 
     t1 = t.time()
-    alice.transmit_key('Bob', logging_level=0)
+    alice.transmit_key('Bob', logging_level=2)
     t2 = t.time()
 
     bob_key = alice.receive_classical_bit_string()

@@ -1,8 +1,12 @@
 import networkx as nx
 from simulaqron.network import Network
+from common.config import default_topology_type, default_n_nodes
 
 
-def setup_network(n_nodes, topology_type, is_manager_needed=True, keyboard_interrupt=True):
+def setup_network(
+    n_nodes=default_n_nodes, topology_type=default_topology_type,
+    is_manager_needed=True, keyboard_interrupt=False):
+
     # Setup the network
     G = nx.Graph()
 
@@ -29,7 +33,8 @@ def setup_network(n_nodes, topology_type, is_manager_needed=True, keyboard_inter
     network = Network(name="default",
                       nodes=G.nodes,
                       topology=topology,
-                      force=True)
+                      force=True,
+                      )
 
     # Start the network
     network.start(wait_until_running=True)

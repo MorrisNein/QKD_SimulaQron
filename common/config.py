@@ -1,10 +1,14 @@
 if __name__ != "__main__":
+    # Topology
+    default_topology_type = "path" # select from ["path", "star", "cycle"]
+    # Number of nodes of the network
+    default_n_nodes = 4
     # Default bit length of generated key. Must be 8*n
-    default_key_length_required = 256
+    default_key_length_required = 100
     # Default bit length of portions of key generation. Currently must be no more than 2**16.
-    default_key_message_length = 1024
+    default_key_message_length = 100
     # Default quantum channel gain
-    default_g_q = 0.25
+    default_g_q = 1
     # Default delta. The probability of changing basis of transmission.
     # Defines protocol gain g_p as follows: g_p = delta**2 - 2*delta + 1
     default_delta = 0.5

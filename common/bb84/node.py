@@ -4,7 +4,7 @@ import numpy as np
 from textwrap import dedent
 from cqc.pythonLib import CQCConnection, qubit, CQCNoQubitError
 
-from common.bb84.service import *
+from common.config import *
 from common.bb84.cascade import run_cascade, calculate_block_parity
 
 ask_parity_msg_count = 0
@@ -104,8 +104,10 @@ class Node:
 
                 # ================= Sifting messages =================
                 # Get other node's positions of changed basis
+                print("A: receive CQC3")
                 bases_str_o = self.receive_classical_bit_string(len(received_key_positions_o))  # CQC3
                 # Send the changed basis positions
+                print("A: send CQC4")
                 self.send_classical_bit_string(receiver, bases_str)  # CQC4
 
                 # ================= Logging =================
@@ -241,8 +243,10 @@ class Node:
 
                 # ================= Sifting messages =================
                 # Send the node's positions of changed basis
+                print("B: send CQC3")
                 self.send_classical_bit_string(transmitter, bases_str)  # CQC3
                 # Get other node's positions of changed basis
+                print("B: receive CQC4")
                 bases_str_o = self.receive_classical_bit_string(len(received_key_positions))  # CQC4
 
                 # ================= Logging =================
