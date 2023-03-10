@@ -1,7 +1,7 @@
 from multiprocessing import Manager
 from multiprocessing.context import Process
 
-from common.networking.machine import Machine, MachineManager
+from qkd.networking.machine import Machine, MachineManager
 
 def run_nodes_path(n_nodes):
 

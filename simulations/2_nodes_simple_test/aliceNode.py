@@ -7,7 +7,7 @@ sys.path.append(os.getcwd())
 
 def main():
     import time as t
-    from common.bb84.node import Node
+    from qkd.bb84.node import Node
     alice = Node('Alice')
 
     t1 = t.time()

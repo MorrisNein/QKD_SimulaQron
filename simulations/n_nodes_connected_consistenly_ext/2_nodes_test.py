@@ -1,7 +1,7 @@
 import threading
 from time import sleep
-from common.bb84.node import Node
-from common.networking.machine import Machine
+from qkd.bb84.node import Node
+from qkd.networking.machine import Machine
 
 node_availability = {}
 node_manager = Node('Manager')

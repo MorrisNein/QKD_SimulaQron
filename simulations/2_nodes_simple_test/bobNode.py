@@ -6,7 +6,7 @@ sys.path.append(os.getcwd())
 
 
 def main():
-    from common.bb84.node import Node
+    from qkd.bb84.node import Node
     bob = Node('Bob')
 
     bob.receive_key('Alice', logging_level=2)

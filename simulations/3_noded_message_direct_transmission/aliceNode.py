@@ -4,7 +4,7 @@ sys.path.append('../../')
 
 
 def main():
-    from common.bb84.node import Node
+    from qkd.bb84.node import Node
     message = 'Hello'
     byte_message = message.encode('utf-8')
     key_length_required = 8 * len(byte_message)

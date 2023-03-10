@@ -1,6 +1,6 @@
 import networkx as nx
 from simulaqron.network import Network
-from common.config import default_topology_type, default_n_nodes
+from qkd.config import default_topology_type, default_n_nodes
 
 
 def setup_network(

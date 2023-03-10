@@ -1,7 +1,7 @@
 from ast import literal_eval
 from time import sleep
 
-from common.bb84.node import Node
+from qkd.bb84.node import Node
 
 
 class Machine(Node):

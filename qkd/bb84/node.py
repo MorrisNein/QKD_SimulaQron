@@ -4,8 +4,8 @@ import numpy as np
 from textwrap import dedent
 from cqc.pythonLib import CQCConnection, qubit, CQCNoQubitError
 
-from common.config import *
-from common.bb84.cascade import run_cascade, calculate_block_parity
+from qkd.config import *
+from qkd.bb84.cascade import run_cascade, calculate_block_parity
 
 ask_parity_msg_count = 0
 reveal_parity_msg_count = 0

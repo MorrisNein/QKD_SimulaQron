@@ -4,7 +4,7 @@ sys.path.append('../../')
 
 
 def main():
-    from common.bb84.node import Node
+    from qkd.bb84.node import Node
 
     bob = Node('Bob')
     # key_length = bob.receive_classical_int('Alice')

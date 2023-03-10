@@ -1,6 +1,6 @@
 from time import time
-from common.networking.network import setup_network
-from common.networking.routing import run_nodes_path
+from qkd.networking.network import setup_network
+from qkd.networking.routing import run_nodes_path
 
 
 def main():

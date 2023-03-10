@@ -4,8 +4,8 @@ sys.path.append('../../')
 
 def main():
     from random import getrandbits
-    from common.bb84.node import Node
-    from common.bb84.service import default_key_length_required
+    from qkd.bb84.node import Node
+    from qkd.bb84.service import default_key_length_required
 
     alice = Node('Alice')
     logging_level = 1

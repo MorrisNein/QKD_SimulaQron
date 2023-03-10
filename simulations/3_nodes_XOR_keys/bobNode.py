@@ -3,7 +3,7 @@ sys.path.append('../../')
 
 
 def main():
-    from common.bb84.node import Node
+    from qkd.bb84.node import Node
 
     bob = Node('Bob')
     # Alice and Charlie make their key
